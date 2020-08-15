@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.utils.importlib import import_module
+import collections
 
 try:
     from django.db.transaction import atomic
@@ -44,7 +45,7 @@ class Command(BaseCommand):
 
                 # Continue if `func` isn't callable, is private, or is defined
                 # in a module other than `orm_fixtures`.
-                if not callable(func) or func.__name__.startswith('_') or \
+                if not isinstance(func, collections.Callable) or func.__name__.startswith('_') or \
                         func.__module__ != orm_fixtures.__name__:
                     continue
 
@@ -66,7 +67,7 @@ class Command(BaseCommand):
         # Execute delayed fixtures.
         while delayed:
             circular = True
-            for fixture, func in delayed.items():
+            for fixture, func in list(delayed.items()):
                 if loaded.issuperset(func._requires):
                     load(fixture, func, verbosity)
                     loaded.add(fixture)
@@ -84,5 +85,5 @@ def get_app_label(app_module):
 
 def load(fixture, func, verbosity):
     if verbosity:
-        print 'Loading ORM fixture: %s' % fixture
+        print('Loading ORM fixture: %s' % fixture)
     func(verbosity)
